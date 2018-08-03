@@ -9,7 +9,7 @@ contract Membership {
 		uint256 lastrenewal;
 	}
 
-	uint256 owner;
+	address owner;
 	
 	mapping (address => Member) members;
 
@@ -27,29 +27,32 @@ contract Membership {
 	//			 Deluxe: Rooftop Pool
 	function signUpOrRenew() public payable isNotActive returns (bool) {
 		require(msg.value > 0);
-		Member storage member = members[msg.sender];
 
-		if(msg.value >= 3 ether) {
-			member = Member("Deluxe", block.timestamp);
+		if(msg.value == 3 ether) {
+			members[msg.sender] = Member("Deluxe", block.timestamp);
 		}
-		else if(msg.value >= 1 ether) {
-			member = Member("Standard", block.timestamp);
+		else if(msg.value == 1 ether) {
+			members[msg.sender] = Member("Standard", block.timestamp);
 		}
 		else {
 			return false;
 		}
 
-		emit NewMember(msg.sender, member.memberlevel);
+		emit NewMember(msg.sender, members[msg.sender].memberlevel);
 		return true;
 	}
 
+	function isActiveMember() public view returns (bool) {
+		return (now - members[msg.sender].lastrenewal) <= 4 weeks;
+	}
+
 	modifier isNotActive() {
-		require(members[msg.sender] == 0 || block.timestamp - members[msg.sender].lastrenewal > 4 weeks);
+		require(now - members[msg.sender].lastrenewal > 4 weeks);
 		_;
 	}
 
 	modifier isMember() {
-		require(members[msg.sender] != 0);
+		require(now - members[msg.sender].lastrenewal <= 4 weeks);
 		_;
 	}
 
